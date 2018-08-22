@@ -1,0 +1,1 @@
+module.exports.SEED = "Este3esuns33dseguro";
