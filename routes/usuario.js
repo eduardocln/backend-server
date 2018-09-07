@@ -9,7 +9,11 @@ var Usuario = require('../models/usuario');
 //Obtener todos los usuarios.
 app.get('/', (req, res, next) => {
 
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
     Usuario.find({}, 'nombre email img role')
+        .skip(desde)
+        .limit(5)
         .exec((err, usuarios) => {
             if (err) {
                 res.status(500).json({
@@ -18,9 +22,12 @@ app.get('/', (req, res, next) => {
                     errors: err
                 });
             }
-            res.status(200).json({
-                ok: true,
-                usuarios: usuarios
+            Usuario.count({}, (err, conteo) => {
+                res.status(200).json({
+                    ok: true,
+                    usuarios: usuarios,
+                    total: conteo
+                });
             });
         });
 });
@@ -101,7 +108,6 @@ app.delete('/:id', midAutenticacion.verificaToken, (req, res) => {
     var id = req.params.id;
     Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
 
-
         if (err) {
             return res.status(500).json({
                 ok: false,
@@ -123,5 +129,4 @@ app.delete('/:id', midAutenticacion.verificaToken, (req, res) => {
 
     });
 });
-
 module.exports = app;
