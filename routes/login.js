@@ -35,10 +35,64 @@ app.post('/google', async(req, res) => {
         return false;
     });
     if (googleUser) {
-        return res.status(200).json({
-            ok: true,
-            message: 'Peticion exitosa...',
-            googleUser: googleUser
+        Usuario.findOne({ email: googleUser.email }, (err, usuarioBD) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error en la busqueda.',
+                    errors: err
+                });
+            }
+
+            if (usuarioBD) {
+                if (usuarioBD.google === false) {
+                    return res.status(500).json({
+                        ok: false,
+                        mensaje: 'Debe usar su autenticacion normal...',
+                        errors: null
+                    });
+                } else {
+                    //Crear token
+                    var token = jwt.sign({ usuario: usuarioBD }, SEED, { expiresIn: 14000 });
+                    res.status(200).json({
+                        ok: 'Ok',
+                        usuario: usuarioBD,
+                        message: 'Autenticado.',
+                        token: token,
+                        id: usuarioBD._id
+                    });
+
+                }
+            } else {
+                //El usuario no existes hay que crearlo...
+                var usuario = new Usuario();
+
+                usuario.nombre = googleUser.nombre;
+                usuario.email = googleUser.email;
+                usuario.img = googleUser.img;
+                usuario.google = true;
+                usuario.password = ":)";
+                usuario.save((err, usuarioBD) => {
+                    if (err) {
+                        return res.status(400).json({
+                            ok: false,
+                            mensaje: 'Error al crear usuario.',
+                            errors: err
+                        });
+                    } else {
+                        usuarioBD.password = ':)';
+                        //Crear token
+                        var token = jwt.sign({ usuario: usuarioBD }, SEED, { expiresIn: 14000 });
+                        return res.status(200).json({
+                            ok: 'Ok',
+                            usuario: usuarioBD,
+                            message: 'Autenticado.',
+                            token: token,
+                            id: usuarioBD._id
+                        });
+                    }
+                });
+            }
         });
     } else {
         return res.status(400).json({
